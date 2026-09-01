@@ -52,6 +52,8 @@ graph, while Tarjan's algorithm finds the components in one pass.
 Assessment 1/
 |-- CMakeLists.txt
 |-- README.md
+|-- examples/
+|   `-- working-example.txt
 |-- include/
 |   |-- graph.hpp
 |   `-- scc.hpp
@@ -73,10 +75,54 @@ Assessment 1/
 
 ## Building and running
 
-Build and run instructions will be added after the first working version of
-the program is created.
+The project requires a C++23 compiler and CMake 3.20 or newer. From the main
+project folder, configure and build it with:
+
+```powershell
+cmake -S . -B build
+cmake --build build --config Release
+```
+
+Run the tests with:
+
+```powershell
+ctest --test-dir build -C Release
+```
+
+The program reads the graph from a text file. The first line contains the
+number of vertices and edges. Each remaining line contains one directed edge.
+For example:
+
+```text
+6 7
+0 1
+1 2
+2 0
+2 3
+3 4
+4 3
+4 5
+```
+
+Vertices are numbered from 0. The example can be run on a Visual Studio build
+with:
+
+```powershell
+.\build\Release\scc.exe .\examples\working-example.txt
+```
+
+With a single-configuration compiler such as GCC, the executable is normally
+in the main build folder:
+
+```powershell
+.\build\scc.exe .\examples\working-example.txt
+```
+
+If no file is provided, the program reads the same format from standard input.
 
 ## Current status
 
-The repository has been created and the project scope has been defined. The
-next step is to add the graph representation and the first correctness tests.
+The graph representation and Kosaraju implementation are complete. The tests
+cover all possible four-vertex directed graphs and a path containing 100,000
+vertices. The next stage is to implement Tarjan's algorithm and prepare the
+benchmark comparison.
