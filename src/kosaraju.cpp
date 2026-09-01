@@ -6,30 +6,54 @@
 
 namespace {
 
-void finishVisit(const DirectedGraph& graph, std::size_t vertex,
-                 std::vector<bool>& visited,
-                 std::vector<std::size_t>& order) {
-  visited[vertex] = true;
+struct VisitFrame {
+  std::size_t vertex;
+  std::size_t nextNeighbour;
+};
 
-  for (std::size_t neighbour : graph.neighbours(vertex)) {
-    if (!visited[neighbour]) {
-      finishVisit(graph, neighbour, visited, order);
+void finishFrom(const DirectedGraph& graph, std::size_t start,
+                std::vector<bool>& visited,
+                std::vector<std::size_t>& order) {
+  std::vector<VisitFrame> pending = {{start, 0}};
+  visited[start] = true;
+
+  while (!pending.empty()) {
+    VisitFrame& current = pending.back();
+    const std::vector<std::size_t>& neighbours =
+        graph.neighbours(current.vertex);
+
+    if (current.nextNeighbour < neighbours.size()) {
+      const std::size_t neighbour = neighbours[current.nextNeighbour];
+      ++current.nextNeighbour;
+
+      if (!visited[neighbour]) {
+        visited[neighbour] = true;
+        pending.push_back({neighbour, 0});
+      }
+    } else {
+      // Keeping the next neighbour in each frame preserves finishing order.
+      order.push_back(current.vertex);
+      pending.pop_back();
     }
   }
-
-  // Record the vertex after every reachable neighbour has been checked.
-  order.push_back(vertex);
 }
 
-void assignComponent(const DirectedGraph& graph, std::size_t vertex,
+void assignComponent(const DirectedGraph& graph, std::size_t start,
                      std::size_t component,
                      std::vector<std::size_t>& componentOf) {
-  // Every vertex reached in this search belongs to the current group.
-  componentOf[vertex] = component;
+  std::vector<std::size_t> pending = {start};
+  componentOf[start] = component;
 
-  for (std::size_t neighbour : graph.neighbours(vertex)) {
-    if (componentOf[neighbour] == graph.vertexCount()) {
-      assignComponent(graph, neighbour, component, componentOf);
+  while (!pending.empty()) {
+    const std::size_t vertex = pending.back();
+    pending.pop_back();
+
+    for (std::size_t neighbour : graph.neighbours(vertex)) {
+      if (componentOf[neighbour] == graph.vertexCount()) {
+        // Mark a vertex when it is added so it cannot be added twice.
+        componentOf[neighbour] = component;
+        pending.push_back(neighbour);
+      }
     }
   }
 }
@@ -43,7 +67,7 @@ std::vector<std::size_t> finishingOrder(const DirectedGraph& graph) {
 
   for (std::size_t vertex = 0; vertex < graph.vertexCount(); ++vertex) {
     if (!visited[vertex]) {
-      finishVisit(graph, vertex, visited, order);
+      finishFrom(graph, vertex, visited, order);
     }
   }
 

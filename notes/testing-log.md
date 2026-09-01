@@ -33,3 +33,9 @@ result may depend on how much call-stack space is available on the computer.
 I added a long one-way path test before changing the search. Every vertex in
 this graph should form its own component. The next step is to replace the
 recursive calls with a stack stored by the program itself.
+
+The recursive calls were replaced with explicit stacks. The first search
+stores both the current vertex and which neighbour should be checked next.
+This is needed because a vertex must only be added to the finishing order
+after all of its neighbours have been handled. The second search only needs a
+stack of vertex numbers because it does not record finishing times.
