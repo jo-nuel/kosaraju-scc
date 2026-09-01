@@ -285,6 +285,21 @@ void testEveryFourVertexGraph() {
         "all four-vertex graphs match the mutual reachability check");
 }
 
+void testLongPath() {
+  constexpr std::size_t vertexCount = 100000;
+  DirectedGraph graph(vertexCount);
+
+  for (std::size_t vertex = 1; vertex < vertexCount; ++vertex) {
+    graph.addEdge(vertex - 1, vertex);
+  }
+
+  const SCCResult result = stronglyConnectedComponents(graph);
+  check(result.componentCount == vertexCount,
+        "every vertex in a long one-way path remains separate");
+  check(result.componentOf.size() == vertexCount,
+        "the long path assigns every vertex");
+}
+
 }  // namespace
 
 int main() {
@@ -302,6 +317,7 @@ int main() {
   testComponentsInEmptyGraph();
   testSelfLoopsRepeatedEdgesAndIsolatedVertices();
   testEveryFourVertexGraph();
+  testLongPath();
 
   if (failures == 0) {
     std::cout << "All tests passed\n";

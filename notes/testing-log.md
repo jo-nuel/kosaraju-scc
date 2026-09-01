@@ -23,3 +23,13 @@ I compared Kosaraju's groups with the mutual reachability check.
 
 All 65,536 graphs matched. This also covered empty graphs, self-loops, separate
 cycles, one-way connections, and graphs where every possible edge is present.
+
+## Long path test
+
+The first version uses recursive searches. A path with 100,000 vertices may
+need 100,000 nested function calls before the first vertex can finish. The
+result may depend on how much call-stack space is available on the computer.
+
+I added a long one-way path test before changing the search. Every vertex in
+this graph should form its own component. The next step is to replace the
+recursive calls with a stack stored by the program itself.
