@@ -18,6 +18,11 @@ void check(bool condition, const char* message) {
   }
 }
 
+bool inSameComponent(const SCCResult& result, std::size_t first,
+                     std::size_t second) {
+  return result.componentOf[first] == result.componentOf[second];
+}
+
 void testDirectedEdges() {
   DirectedGraph graph(4);
 
@@ -129,6 +134,65 @@ void testFinishingOrderOnEmptyGraph() {
         "an empty graph has an empty finishing order");
 }
 
+void testComponentsFromWorkingExample() {
+  DirectedGraph graph(6);
+  graph.addEdge(0, 1);
+  graph.addEdge(1, 2);
+  graph.addEdge(2, 0);
+  graph.addEdge(2, 3);
+  graph.addEdge(3, 4);
+  graph.addEdge(4, 3);
+  graph.addEdge(4, 5);
+
+  const SCCResult result = stronglyConnectedComponents(graph);
+
+  check(result.componentCount == 3,
+        "the working example contains three components");
+  check(result.componentOf.size() == graph.vertexCount(),
+        "every vertex receives a component number");
+  check(inSameComponent(result, 0, 1) && inSameComponent(result, 1, 2),
+        "vertices 0, 1, and 2 are grouped together");
+  check(inSameComponent(result, 3, 4),
+        "vertices 3 and 4 are grouped together");
+  check(!inSameComponent(result, 2, 3),
+        "a one-way edge does not join two components");
+  check(!inSameComponent(result, 4, 5),
+        "vertex 5 remains in its own component");
+}
+
+void testComponentsInCycle() {
+  DirectedGraph graph(4);
+  graph.addEdge(0, 1);
+  graph.addEdge(1, 2);
+  graph.addEdge(2, 3);
+  graph.addEdge(3, 0);
+
+  const SCCResult result = stronglyConnectedComponents(graph);
+  check(result.componentCount == 1, "one cycle forms one component");
+  check(inSameComponent(result, 0, 3),
+        "the first and last cycle vertices are grouped together");
+}
+
+void testComponentsInAcyclicGraph() {
+  DirectedGraph graph(4);
+  graph.addEdge(0, 1);
+  graph.addEdge(1, 2);
+  graph.addEdge(2, 3);
+
+  const SCCResult result = stronglyConnectedComponents(graph);
+  check(result.componentCount == 4,
+        "each vertex in a directed path is its own component");
+  check(!inSameComponent(result, 0, 1),
+        "a one-way path does not make vertices mutually reachable");
+}
+
+void testComponentsInEmptyGraph() {
+  const SCCResult result = stronglyConnectedComponents(DirectedGraph(0));
+  check(result.componentCount == 0, "an empty graph has no components");
+  check(result.componentOf.empty(),
+        "an empty graph has no component assignments");
+}
+
 }  // namespace
 
 int main() {
@@ -140,6 +204,10 @@ int main() {
   testFinishingOrderOnDisconnectedGraph();
   testFinishingOrderContainsEveryVertex();
   testFinishingOrderOnEmptyGraph();
+  testComponentsFromWorkingExample();
+  testComponentsInCycle();
+  testComponentsInAcyclicGraph();
+  testComponentsInEmptyGraph();
 
   if (failures == 0) {
     std::cout << "All tests passed\n";
