@@ -6,7 +6,10 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_library(scc_core src/graph.cpp)
+add_library(scc_core
+  src/graph.cpp
+  src/kosaraju.cpp
+)
 target_include_directories(scc_core PUBLIC include)
 
 add_executable(scc src/main.cpp)
@@ -25,4 +28,4 @@ else()
 endif()
 
 enable_testing()
-add_test(NAME graph_representation COMMAND scc_tests)
+add_test(NAME scc_tests COMMAND scc_tests)
