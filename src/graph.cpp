@@ -21,6 +21,19 @@ const std::vector<std::size_t>& DirectedGraph::neighbours(
   return adjacencyList_[vertex];
 }
 
+DirectedGraph DirectedGraph::transpose() const {
+  DirectedGraph reversed(vertexCount());
+
+  for (std::size_t from = 0; from < vertexCount(); ++from) {
+    for (std::size_t to : neighbours(from)) {
+      // An edge from A to B becomes an edge from B to A.
+      reversed.addEdge(to, from);
+    }
+  }
+
+  return reversed;
+}
+
 void DirectedGraph::checkVertex(std::size_t vertex) const {
   if (vertex >= vertexCount()) {
     throw std::out_of_range("vertex is outside the graph");

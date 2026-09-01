@@ -52,6 +52,30 @@ void testInvalidVertex() {
   check(threwException, "an edge cannot refer to a missing vertex");
 }
 
+void testTransposedGraph() {
+  DirectedGraph graph(5);
+  graph.addEdge(0, 1);
+  graph.addEdge(2, 1);
+  graph.addEdge(2, 1);
+  graph.addEdge(2, 3);
+  graph.addEdge(3, 3);
+
+  const DirectedGraph reversed = graph.transpose();
+  const std::vector<std::size_t> expectedFromOne = {0, 2, 2};
+  const std::vector<std::size_t> expectedFromThree = {2, 3};
+
+  check(reversed.vertexCount() == graph.vertexCount(),
+        "transposing keeps every vertex");
+  check(reversed.neighbours(0).empty(),
+        "a reversed edge is not left at its old starting vertex");
+  check(reversed.neighbours(1) == expectedFromOne,
+        "normal and repeated edges are reversed");
+  check(reversed.neighbours(3) == expectedFromThree,
+        "a self-loop still points to the same vertex");
+  check(reversed.neighbours(4).empty(),
+        "an isolated vertex remains in the graph");
+}
+
 void testFinishingOrderOnPath() {
   DirectedGraph graph(4);
   graph.addEdge(0, 1);
@@ -110,6 +134,7 @@ void testFinishingOrderOnEmptyGraph() {
 int main() {
   testDirectedEdges();
   testInvalidVertex();
+  testTransposedGraph();
   testFinishingOrderOnPath();
   testFinishingOrderOnCycle();
   testFinishingOrderOnDisconnectedGraph();

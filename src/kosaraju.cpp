@@ -16,6 +16,7 @@ void finishVisit(const DirectedGraph& graph, std::size_t vertex,
     }
   }
 
+  // Record the vertex after every reachable neighbour has been checked.
   order.push_back(vertex);
 }
 

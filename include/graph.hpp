@@ -11,6 +11,7 @@ class DirectedGraph {
   std::size_t vertexCount() const;
   void addEdge(std::size_t from, std::size_t to);
   const std::vector<std::size_t>& neighbours(std::size_t vertex) const;
+  DirectedGraph transpose() const;
 
  private:
   void checkVertex(std::size_t vertex) const;
