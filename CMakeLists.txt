@@ -9,6 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(scc_core
   src/graph.cpp
   src/kosaraju.cpp
+  src/tarjan.cpp
 )
 target_include_directories(scc_core PUBLIC include)
 

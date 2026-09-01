@@ -24,6 +24,24 @@ bool inSameComponent(const SCCResult& result, std::size_t first,
   return result.componentOf[first] == result.componentOf[second];
 }
 
+bool samePartition(const SCCResult& first, const SCCResult& second) {
+  if (first.componentOf.size() != second.componentOf.size() ||
+      first.componentCount != second.componentCount) {
+    return false;
+  }
+
+  for (std::size_t left = 0; left < first.componentOf.size(); ++left) {
+    for (std::size_t right = 0; right < first.componentOf.size(); ++right) {
+      if (inSameComponent(first, left, right) !=
+          inSameComponent(second, left, right)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 std::vector<bool> reachableFrom(const DirectedGraph& graph,
                                 std::size_t start) {
   std::vector<bool> reached(graph.vertexCount(), false);
@@ -300,6 +318,43 @@ void testLongPath() {
         "the long path assigns every vertex");
 }
 
+void testTarjanOnWorkingExample() {
+  DirectedGraph graph(6);
+  graph.addEdge(0, 1);
+  graph.addEdge(1, 2);
+  graph.addEdge(2, 0);
+  graph.addEdge(2, 3);
+  graph.addEdge(3, 4);
+  graph.addEdge(4, 3);
+  graph.addEdge(4, 5);
+
+  const SCCResult kosaraju = stronglyConnectedComponents(graph);
+  const SCCResult tarjan = tarjanStronglyConnectedComponents(graph);
+
+  check(tarjan.componentCount == 3,
+        "Tarjan finds three components in the working example");
+  check(samePartition(kosaraju, tarjan),
+        "both algorithms group the working example in the same way");
+}
+
+void testTarjanOnSmallUnusualGraphs() {
+  DirectedGraph unusual(4);
+  unusual.addEdge(0, 0);
+  unusual.addEdge(1, 2);
+  unusual.addEdge(1, 2);
+  unusual.addEdge(2, 1);
+
+  const SCCResult unusualKosaraju = stronglyConnectedComponents(unusual);
+  const SCCResult unusualTarjan = tarjanStronglyConnectedComponents(unusual);
+  check(samePartition(unusualKosaraju, unusualTarjan),
+        "Tarjan handles self-loops, repeated edges, and isolated vertices");
+
+  const SCCResult empty =
+      tarjanStronglyConnectedComponents(DirectedGraph(0));
+  check(empty.componentCount == 0 && empty.componentOf.empty(),
+        "Tarjan handles an empty graph");
+}
+
 }  // namespace
 
 int main() {
@@ -318,6 +373,8 @@ int main() {
   testSelfLoopsRepeatedEdgesAndIsolatedVertices();
   testEveryFourVertexGraph();
   testLongPath();
+  testTarjanOnWorkingExample();
+  testTarjanOnSmallUnusualGraphs();
 
   if (failures == 0) {
     std::cout << "All tests passed\n";
