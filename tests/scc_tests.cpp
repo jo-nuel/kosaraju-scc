@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <iostream>
 #include <stdexcept>
 #include <vector>
@@ -21,6 +22,50 @@ void check(bool condition, const char* message) {
 bool inSameComponent(const SCCResult& result, std::size_t first,
                      std::size_t second) {
   return result.componentOf[first] == result.componentOf[second];
+}
+
+std::vector<bool> reachableFrom(const DirectedGraph& graph,
+                                std::size_t start) {
+  std::vector<bool> reached(graph.vertexCount(), false);
+  std::vector<std::size_t> pending = {start};
+  reached[start] = true;
+
+  while (!pending.empty()) {
+    const std::size_t vertex = pending.back();
+    pending.pop_back();
+
+    for (std::size_t neighbour : graph.neighbours(vertex)) {
+      if (!reached[neighbour]) {
+        reached[neighbour] = true;
+        pending.push_back(neighbour);
+      }
+    }
+  }
+
+  return reached;
+}
+
+bool partitionMatchesReachability(const DirectedGraph& graph,
+                                  const SCCResult& result) {
+  std::vector<std::vector<bool> > reachable;
+  reachable.reserve(graph.vertexCount());
+
+  for (std::size_t vertex = 0; vertex < graph.vertexCount(); ++vertex) {
+    reachable.push_back(reachableFrom(graph, vertex));
+  }
+
+  for (std::size_t first = 0; first < graph.vertexCount(); ++first) {
+    for (std::size_t second = 0; second < graph.vertexCount(); ++second) {
+      // Two vertices share a component exactly when both can reach each other.
+      const bool mutuallyReachable =
+          reachable[first][second] && reachable[second][first];
+      if (inSameComponent(result, first, second) != mutuallyReachable) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 void testDirectedEdges() {
@@ -193,6 +238,53 @@ void testComponentsInEmptyGraph() {
         "an empty graph has no component assignments");
 }
 
+void testSelfLoopsRepeatedEdgesAndIsolatedVertices() {
+  DirectedGraph graph(4);
+  graph.addEdge(0, 0);
+  graph.addEdge(1, 2);
+  graph.addEdge(1, 2);
+  graph.addEdge(2, 1);
+  graph.addEdge(2, 1);
+
+  const SCCResult result = stronglyConnectedComponents(graph);
+
+  check(result.componentCount == 3,
+        "self-loops and repeated edges do not create extra components");
+  check(inSameComponent(result, 1, 2),
+        "repeated edges preserve the component containing 1 and 2");
+  check(!inSameComponent(result, 0, 1),
+        "a self-loop does not connect its vertex to another component");
+  check(!inSameComponent(result, 0, 3),
+        "an isolated vertex remains separate");
+}
+
+void testEveryFourVertexGraph() {
+  constexpr std::size_t vertexCount = 4;
+  constexpr std::size_t possibleEdges = vertexCount * vertexCount;
+  const std::uint32_t graphCount = std::uint32_t{1} << possibleEdges;
+  bool allMatched = true;
+
+  // Each bit describes whether one possible directed edge is present.
+  for (std::uint32_t mask = 0; mask < graphCount && allMatched; ++mask) {
+    DirectedGraph graph(vertexCount);
+
+    for (std::size_t from = 0; from < vertexCount; ++from) {
+      for (std::size_t to = 0; to < vertexCount; ++to) {
+        const std::size_t bit = from * vertexCount + to;
+        if ((mask & (std::uint32_t{1} << bit)) != 0) {
+          graph.addEdge(from, to);
+        }
+      }
+    }
+
+    const SCCResult result = stronglyConnectedComponents(graph);
+    allMatched = partitionMatchesReachability(graph, result);
+  }
+
+  check(allMatched,
+        "all four-vertex graphs match the mutual reachability check");
+}
+
 }  // namespace
 
 int main() {
@@ -208,6 +300,8 @@ int main() {
   testComponentsInCycle();
   testComponentsInAcyclicGraph();
   testComponentsInEmptyGraph();
+  testSelfLoopsRepeatedEdgesAndIsolatedVertices();
+  testEveryFourVertexGraph();
 
   if (failures == 0) {
     std::cout << "All tests passed\n";

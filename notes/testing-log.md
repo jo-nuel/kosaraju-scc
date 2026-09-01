@@ -14,3 +14,12 @@ different when using strict comparison.
 
 I converted the reachability result to a Boolean value and ran the check
 again. All 1,000 small random graphs matched.
+
+## Exhaustive four-vertex check
+
+A graph with four vertices has 16 possible directed edges when self-loops are
+included. I generated all 65,536 combinations of those edges. For every graph,
+I compared Kosaraju's groups with the mutual reachability check.
+
+All 65,536 graphs matched. This also covered empty graphs, self-loops, separate
+cycles, one-way connections, and graphs where every possible edge is present.
