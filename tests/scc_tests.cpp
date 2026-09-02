@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "graph.hpp"
+#include "graph_generators.hpp"
 #include "scc.hpp"
 
 namespace {
@@ -315,6 +316,39 @@ void testEveryFourVertexGraph() {
         "both algorithms agree on every four-vertex graph");
 }
 
+void testPathGenerator() {
+  const DirectedGraph graph = makeDirectedPath(4);
+
+  check(graph.vertexCount() == 4,
+        "the path generator keeps the requested number of vertices");
+  check(graph.neighbours(0) == std::vector<std::size_t>{1},
+        "the path begins with an edge from 0 to 1");
+  check(graph.neighbours(1) == std::vector<std::size_t>{2},
+        "each path vertex points to the next vertex");
+  check(graph.neighbours(2) == std::vector<std::size_t>{3},
+        "the path reaches its final vertex");
+  check(graph.neighbours(3).empty(),
+        "the final path vertex has no outgoing edge");
+  check(makeDirectedPath(0).vertexCount() == 0,
+        "the path generator accepts an empty graph");
+}
+
+void testCycleGenerator() {
+  const DirectedGraph graph = makeDirectedCycle(4);
+
+  check(graph.neighbours(0) == std::vector<std::size_t>{1},
+        "the cycle begins with an edge from 0 to 1");
+  check(graph.neighbours(2) == std::vector<std::size_t>{3},
+        "the cycle follows the vertex order");
+  check(graph.neighbours(3) == std::vector<std::size_t>{0},
+        "the final cycle vertex returns to vertex 0");
+  check(makeDirectedCycle(0).vertexCount() == 0,
+        "the cycle generator accepts an empty graph");
+  check(makeDirectedCycle(1).neighbours(0) ==
+            std::vector<std::size_t>{0},
+        "a one-vertex cycle contains a self-loop");
+}
+
 void testLongPath() {
   constexpr std::size_t vertexCount = 100000;
   DirectedGraph graph(vertexCount);
@@ -387,6 +421,8 @@ void testTarjanOnLongPath() {
 int main() {
   testDirectedEdges();
   testInvalidVertex();
+  testPathGenerator();
+  testCycleGenerator();
   testTransposedGraph();
   testFinishingOrderOnPath();
   testFinishingOrderOnCycle();
