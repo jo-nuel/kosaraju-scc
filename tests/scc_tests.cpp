@@ -367,6 +367,21 @@ void testTarjanOnSmallUnusualGraphs() {
         "Tarjan handles an empty graph");
 }
 
+void testTarjanOnLongPath() {
+  constexpr std::size_t vertexCount = 100000;
+  DirectedGraph graph(vertexCount);
+
+  for (std::size_t vertex = 1; vertex < vertexCount; ++vertex) {
+    graph.addEdge(vertex - 1, vertex);
+  }
+
+  const SCCResult result = tarjanStronglyConnectedComponents(graph);
+  check(result.componentCount == vertexCount,
+        "Tarjan keeps every long-path vertex in a separate component");
+  check(result.componentOf.size() == vertexCount,
+        "Tarjan assigns every vertex in the long path");
+}
+
 }  // namespace
 
 int main() {
@@ -387,6 +402,7 @@ int main() {
   testLongPath();
   testTarjanOnWorkingExample();
   testTarjanOnSmallUnusualGraphs();
+  testTarjanOnLongPath();
 
   if (failures == 0) {
     std::cout << "All tests passed\n";

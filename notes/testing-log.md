@@ -44,3 +44,10 @@ stores both the current vertex and which neighbour should be checked next.
 This is needed because a vertex must only be added to the finishing order
 after all of its neighbours have been handled. The second search only needs a
 stack of vertex numbers because it does not record finishing times.
+
+The first Tarjan version also uses recursive calls. I added the same
+100,000-vertex path requirement for Tarjan before changing its implementation.
+An equivalent recursive JavaScript check exceeded its call-stack limit. A
+native C++ compiler is not available in the current shell, so I have not
+claimed this as a C++ test result. The recursive C++ version still has the same
+risk and should be replaced with explicit search frames.
