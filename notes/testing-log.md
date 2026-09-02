@@ -24,6 +24,11 @@ I compared Kosaraju's groups with the mutual reachability check.
 All 65,536 graphs matched. This also covered empty graphs, self-loops, separate
 cycles, one-way connections, and graphs where every possible edge is present.
 
+After adding Tarjan's algorithm, I reused the same exhaustive check instead of
+only testing a few examples. For each graph, Tarjan and Kosaraju are each
+checked against mutual reachability and then checked against each other. Both
+algorithms matched on all 65,536 graphs.
+
 ## Long path test
 
 The first version uses recursive searches. A path with 100,000 vertices may

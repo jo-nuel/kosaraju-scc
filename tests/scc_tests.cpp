@@ -280,10 +280,15 @@ void testEveryFourVertexGraph() {
   constexpr std::size_t vertexCount = 4;
   constexpr std::size_t possibleEdges = vertexCount * vertexCount;
   const std::uint32_t graphCount = std::uint32_t{1} << possibleEdges;
-  bool allMatched = true;
+  bool kosarajuMatched = true;
+  bool tarjanMatched = true;
+  bool algorithmsAgreed = true;
 
   // Each bit describes whether one possible directed edge is present.
-  for (std::uint32_t mask = 0; mask < graphCount && allMatched; ++mask) {
+  for (std::uint32_t mask = 0;
+       mask < graphCount && kosarajuMatched && tarjanMatched &&
+       algorithmsAgreed;
+       ++mask) {
     DirectedGraph graph(vertexCount);
 
     for (std::size_t from = 0; from < vertexCount; ++from) {
@@ -295,12 +300,19 @@ void testEveryFourVertexGraph() {
       }
     }
 
-    const SCCResult result = stronglyConnectedComponents(graph);
-    allMatched = partitionMatchesReachability(graph, result);
+    const SCCResult kosaraju = stronglyConnectedComponents(graph);
+    const SCCResult tarjan = tarjanStronglyConnectedComponents(graph);
+    kosarajuMatched = partitionMatchesReachability(graph, kosaraju);
+    tarjanMatched = partitionMatchesReachability(graph, tarjan);
+    algorithmsAgreed = samePartition(kosaraju, tarjan);
   }
 
-  check(allMatched,
-        "all four-vertex graphs match the mutual reachability check");
+  check(kosarajuMatched,
+        "Kosaraju matches reachability on every four-vertex graph");
+  check(tarjanMatched,
+        "Tarjan matches reachability on every four-vertex graph");
+  check(algorithmsAgreed,
+        "both algorithms agree on every four-vertex graph");
 }
 
 void testLongPath() {
