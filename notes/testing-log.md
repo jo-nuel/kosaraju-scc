@@ -51,3 +51,10 @@ An equivalent recursive JavaScript check exceeded its call-stack limit. A
 native C++ compiler is not available in the current shell, so I have not
 claimed this as a C++ test result. The recursive C++ version still has the same
 risk and should be replaced with explicit search frames.
+
+I replaced Tarjan's recursive calls with search frames that store a vertex and
+the next outgoing edge to inspect. Tarjan still needs a separate active stack,
+because that stack records vertices that may belong to the same component.
+When a search frame finishes, its low-link value is passed to the parent frame.
+This takes the place of the update that previously happened after a recursive
+call returned.

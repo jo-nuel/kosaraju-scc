@@ -7,6 +7,11 @@
 
 namespace {
 
+struct SearchFrame {
+  std::size_t vertex;
+  std::size_t nextNeighbour;
+};
+
 class TarjanSearch {
  public:
   explicit TarjanSearch(const DirectedGraph& graph)
@@ -20,7 +25,7 @@ class TarjanSearch {
   SCCResult run() {
     for (std::size_t vertex = 0; vertex < graph_.vertexCount(); ++vertex) {
       if (index_[vertex] == unvisited_) {
-        visit(vertex);
+        visitFrom(vertex);
       }
     }
 
@@ -28,29 +33,16 @@ class TarjanSearch {
   }
 
  private:
-  void visit(std::size_t vertex) {
+  void beginVisit(std::size_t vertex) {
     index_[vertex] = nextIndex_;
     lowLink_[vertex] = nextIndex_;
     ++nextIndex_;
 
     active_.push_back(vertex);
     onStack_[vertex] = true;
+  }
 
-    for (std::size_t neighbour : graph_.neighbours(vertex)) {
-      if (index_[neighbour] == unvisited_) {
-        visit(neighbour);
-        lowLink_[vertex] =
-            std::min(lowLink_[vertex], lowLink_[neighbour]);
-      } else if (onStack_[neighbour]) {
-        // This edge returns to a vertex in the unfinished search path.
-        lowLink_[vertex] = std::min(lowLink_[vertex], index_[neighbour]);
-      }
-    }
-
-    if (lowLink_[vertex] != index_[vertex]) {
-      return;
-    }
-
+  void closeComponent(std::size_t root) {
     // A root closes one complete component at the top of the active stack.
     while (true) {
       const std::size_t member = active_.back();
@@ -58,11 +50,50 @@ class TarjanSearch {
       onStack_[member] = false;
       componentOf_[member] = componentCount_;
 
-      if (member == vertex) {
+      if (member == root) {
         break;
       }
     }
     ++componentCount_;
+  }
+
+  void visitFrom(std::size_t start) {
+    std::vector<SearchFrame> pending;
+    pending.push_back({start, 0});
+    beginVisit(start);
+
+    while (!pending.empty()) {
+      SearchFrame& current = pending.back();
+      const std::vector<std::size_t>& neighbours =
+          graph_.neighbours(current.vertex);
+
+      if (current.nextNeighbour < neighbours.size()) {
+        const std::size_t neighbour = neighbours[current.nextNeighbour];
+        ++current.nextNeighbour;
+
+        if (index_[neighbour] == unvisited_) {
+          beginVisit(neighbour);
+          pending.push_back({neighbour, 0});
+        } else if (onStack_[neighbour]) {
+          // Completed vertices cannot lead back into the current component.
+          lowLink_[current.vertex] =
+              std::min(lowLink_[current.vertex], index_[neighbour]);
+        }
+        continue;
+      }
+
+      const std::size_t vertex = current.vertex;
+      if (lowLink_[vertex] == index_[vertex]) {
+        closeComponent(vertex);
+      }
+
+      pending.pop_back();
+      if (!pending.empty()) {
+        // This is the update that a recursive call makes when it returns.
+        const std::size_t parent = pending.back().vertex;
+        lowLink_[parent] = std::min(lowLink_[parent], lowLink_[vertex]);
+      }
+    }
   }
 
   const DirectedGraph& graph_;
