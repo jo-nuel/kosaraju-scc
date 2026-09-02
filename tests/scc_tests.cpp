@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <iostream>
 #include <stdexcept>
+#include <unordered_set>
 #include <vector>
 
 #include "graph.hpp"
@@ -349,6 +350,43 @@ void testCycleGenerator() {
         "a one-vertex cycle contains a self-loop");
 }
 
+void testRandomGenerator() {
+  constexpr std::size_t vertexCount = 8;
+  constexpr std::size_t edgeCount = 20;
+  constexpr std::uint64_t seed = 14487692;
+  const DirectedGraph first =
+      makeRandomGraph(vertexCount, edgeCount, seed);
+  const DirectedGraph repeated =
+      makeRandomGraph(vertexCount, edgeCount, seed);
+
+  bool sameSeedMatched = true;
+  bool noSelfLoops = true;
+  std::unordered_set<std::size_t> uniqueEdges;
+
+  for (std::size_t from = 0; from < vertexCount; ++from) {
+    sameSeedMatched = sameSeedMatched &&
+                      first.neighbours(from) == repeated.neighbours(from);
+    for (std::size_t to : first.neighbours(from)) {
+      noSelfLoops = noSelfLoops && from != to;
+      uniqueEdges.insert(from * vertexCount + to);
+    }
+  }
+
+  check(sameSeedMatched, "the same random seed rebuilds the same graph");
+  check(noSelfLoops, "random timing graphs do not contain self-loops");
+  check(uniqueEdges.size() == edgeCount,
+        "random timing graphs contain the requested unique edges");
+
+  bool rejectedTooManyEdges = false;
+  try {
+    makeRandomGraph(3, 7, seed);
+  } catch (const std::invalid_argument&) {
+    rejectedTooManyEdges = true;
+  }
+  check(rejectedTooManyEdges,
+        "the generator rejects an impossible unique edge count");
+}
+
 void testLongPath() {
   constexpr std::size_t vertexCount = 100000;
   DirectedGraph graph(vertexCount);
@@ -423,6 +461,7 @@ int main() {
   testInvalidVertex();
   testPathGenerator();
   testCycleGenerator();
+  testRandomGenerator();
   testTransposedGraph();
   testFinishingOrderOnPath();
   testFinishingOrderOnCycle();

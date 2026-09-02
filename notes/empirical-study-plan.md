@@ -27,11 +27,14 @@ test several shapes:
 - One large directed cycle, where every vertex is in the same component
 - Separate groups with many edges inside each group and only one-way edges
   between groups
-- Sparse random graphs, where each vertex has only a few outgoing edges
-- Denser random graphs, where the number of edges grows faster
+- Sparse random graphs, with an average out-degree between 2 and 4
+- Dense random graphs, containing 25% to 50% of the possible directed edges
 
 The graph generators will use recorded random seeds. This means the same test
-graphs can be created again if a result looks unusual.
+graphs can be created again if a result looks unusual. Timing graphs will not
+contain self-loops or repeated edges, because those edges add work without
+adding a new connection. Each graph will be built once and passed unchanged to
+both algorithms.
 
 ## Measurements
 
