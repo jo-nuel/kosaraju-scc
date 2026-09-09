@@ -387,6 +387,49 @@ void testRandomGenerator() {
         "the generator rejects an impossible unique edge count");
 }
 
+void testClusteredGenerator() {
+  constexpr std::size_t groupCount = 3;
+  constexpr std::size_t groupSize = 4;
+  constexpr std::size_t extraEdges = 3;
+  const DirectedGraph graph =
+      makeClusteredGraph(groupCount, groupSize, extraEdges, 14487692);
+  const SCCResult result = stronglyConnectedComponents(graph);
+
+  check(graph.vertexCount() == groupCount * groupSize,
+        "the clustered generator creates every requested group");
+  check(result.componentCount == groupCount,
+        "each generated group is one separate component");
+
+  bool groupsMatchPlan = true;
+  for (std::size_t group = 0; group < groupCount; ++group) {
+    const std::size_t firstVertex = group * groupSize;
+    for (std::size_t offset = 1; offset < groupSize; ++offset) {
+      groupsMatchPlan = groupsMatchPlan &&
+                        inSameComponent(result, firstVertex,
+                                        firstVertex + offset);
+    }
+  }
+  groupsMatchPlan = groupsMatchPlan &&
+                    !inSameComponent(result, 0, groupSize) &&
+                    !inSameComponent(result, groupSize, 2 * groupSize);
+  check(groupsMatchPlan,
+        "clustered graph components match the requested group boundaries");
+
+  const std::size_t expectedEdges =
+      groupCount * (groupSize + extraEdges) + groupCount - 1;
+  std::unordered_set<std::size_t> uniqueEdges;
+  bool noSelfLoops = true;
+  for (std::size_t from = 0; from < graph.vertexCount(); ++from) {
+    for (std::size_t to : graph.neighbours(from)) {
+      noSelfLoops = noSelfLoops && from != to;
+      uniqueEdges.insert(from * graph.vertexCount() + to);
+    }
+  }
+  check(noSelfLoops, "clustered timing graphs do not contain self-loops");
+  check(uniqueEdges.size() == expectedEdges,
+        "clustered timing graphs contain no repeated edges");
+}
+
 void testLongPath() {
   constexpr std::size_t vertexCount = 100000;
   DirectedGraph graph(vertexCount);
@@ -462,6 +505,7 @@ int main() {
   testPathGenerator();
   testCycleGenerator();
   testRandomGenerator();
+  testClusteredGenerator();
   testTransposedGraph();
   testFinishingOrderOnPath();
   testFinishingOrderOnCycle();

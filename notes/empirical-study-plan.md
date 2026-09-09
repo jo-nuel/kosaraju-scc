@@ -36,6 +36,12 @@ contain self-loops or repeated edges, because those edges add work without
 adding a new connection. Each graph will be built once and passed unchanged to
 both algorithms.
 
+Clustered graphs will use equal-sized groups. A directed cycle through each
+group guarantees that it is strongly connected before random internal edges
+are added. One bridge joins each group to the next group, and every bridge
+points forward. This creates one connected graph while preserving the planned
+component boundaries.
+
 ## Measurements
 
 Graph generation and file reading will happen before timing begins. The timed
