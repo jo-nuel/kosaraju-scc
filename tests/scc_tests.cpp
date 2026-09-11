@@ -6,6 +6,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "benchmark.hpp"
 #include "graph.hpp"
 #include "graph_generators.hpp"
 #include "scc.hpp"
@@ -430,6 +431,29 @@ void testClusteredGenerator() {
         "clustered timing graphs contain no repeated edges");
 }
 
+void testBenchmarkMeasurements() {
+  const DirectedGraph graph = makeDirectedCycle(6);
+  const std::vector<TimingResult> results = measureAlgorithms(graph, 1, 3);
+
+  check(results.size() == 6,
+        "three timed runs are recorded for both algorithms");
+
+  std::size_t kosarajuRuns = 0;
+  std::size_t tarjanRuns = 0;
+  bool validResults = true;
+  for (const TimingResult& result : results) {
+    kosarajuRuns += result.algorithm == "kosaraju" ? 1 : 0;
+    tarjanRuns += result.algorithm == "tarjan" ? 1 : 0;
+    validResults = validResults && result.repetition < 3 &&
+                   result.nanoseconds >= 0 && result.componentCount == 1;
+  }
+
+  check(kosarajuRuns == 3 && tarjanRuns == 3,
+        "the harness records the same number of runs for both algorithms");
+  check(validResults,
+        "each timing row records its run number, time, and component count");
+}
+
 void testLongPath() {
   constexpr std::size_t vertexCount = 100000;
   DirectedGraph graph(vertexCount);
@@ -506,6 +530,7 @@ int main() {
   testCycleGenerator();
   testRandomGenerator();
   testClusteredGenerator();
+  testBenchmarkMeasurements();
   testTransposedGraph();
   testFinishingOrderOnPath();
   testFinishingOrderOnCycle();

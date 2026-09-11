@@ -49,6 +49,12 @@ section will contain only the component algorithm. Each case will be run more
 than once, and I will report the median time so that one slow run has less
 effect on the result.
 
+Each algorithm will have one warm-up run followed by seven timed runs. The
+warm-up result will not be recorded. During the timed repetitions, the order
+of the two algorithms will alternate so one algorithm is not always measured
+first. Every individual time will be saved, allowing the median to be checked
+again later.
+
 The main measurements will be:
 
 - Number of vertices
