@@ -120,9 +120,34 @@ in the main build folder:
 
 If no file is provided, the program reads the same format from standard input.
 
+## Running one benchmark case
+
+The benchmark program supports path, cycle, random, and clustered graphs. For
+example, this command measures a random graph with 10,000 vertices and 30,000
+edges, then saves every run as CSV:
+
+```powershell
+.\build\Release\scc_benchmark.exe random 10000 30000 14487692 > results.csv
+```
+
+The available forms are:
+
+```text
+scc_benchmark path <vertices>
+scc_benchmark cycle <vertices>
+scc_benchmark random <vertices> <edges> <seed>
+scc_benchmark clustered <groups> <group-size> <extra-edges-per-group> <seed>
+```
+
+Graph creation happens before timing starts. Each algorithm receives one
+warm-up followed by seven measured runs on the same graph. The output records
+the graph family, vertex and edge counts, seed, algorithm, run number, elapsed
+nanoseconds, and component count.
+
 ## Current status
 
-The graph representation and Kosaraju implementation are complete. The tests
-cover all possible four-vertex directed graphs and a path containing 100,000
-vertices. The next stage is to implement Tarjan's algorithm and prepare the
-benchmark comparison.
+The Kosaraju and Tarjan implementations are in place. The tests compare them
+on all possible four-vertex directed graphs and on a path containing 100,000
+vertices. The benchmark can measure one generated graph case and write its
+individual timing results as CSV. The next stage is to choose the full set of
+benchmark sizes and automate running them.

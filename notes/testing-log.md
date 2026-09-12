@@ -58,3 +58,15 @@ because that stack records vertices that may belong to the same component.
 When a search frame finishes, its low-link value is passed to the parent frame.
 This takes the place of the update that previously happened after a recursive
 call returned.
+
+## Native C++ verification
+
+I found an MSYS2 GCC 16.1 compiler installed outside the normal command path.
+The first build attempt could not find `libgcc_s_seh-1.dll`. Adding the
+compiler's runtime folder to the build process path fixed this without changing
+the global Windows settings.
+
+The project then compiled with C++23 and the enabled warning flags. The complete
+test program printed `All tests passed`. A benchmark smoke test on a random
+graph with 1,000 vertices and 3,000 edges produced seven rows for each
+algorithm, and both algorithms reported 105 components.
