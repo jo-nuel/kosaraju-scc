@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <unordered_set>
 #include <vector>
@@ -454,6 +455,23 @@ void testBenchmarkMeasurements() {
         "each timing row records its run number, time, and component count");
 }
 
+void testBenchmarkCsvOutput() {
+  const std::vector<TimingResult> results = {
+      {"kosaraju", 0, 125, 2},
+      {"tarjan", 0, 98, 2},
+  };
+  std::ostringstream output;
+  writeTimingCsvHeader(output);
+  writeTimingCsvRows(output, "clustered", 12, 23, 14487692, results);
+
+  const std::string expected =
+      "graph_family,vertices,edges,seed,algorithm,run,nanoseconds,components\n"
+      "clustered,12,23,14487692,kosaraju,1,125,2\n"
+      "clustered,12,23,14487692,tarjan,1,98,2\n";
+  check(output.str() == expected,
+        "CSV output keeps the graph details and every individual run");
+}
+
 void testLongPath() {
   constexpr std::size_t vertexCount = 100000;
   DirectedGraph graph(vertexCount);
@@ -531,6 +549,7 @@ int main() {
   testRandomGenerator();
   testClusteredGenerator();
   testBenchmarkMeasurements();
+  testBenchmarkCsvOutput();
   testTransposedGraph();
   testFinishingOrderOnPath();
   testFinishingOrderOnCycle();

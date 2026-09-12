@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <ostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -68,4 +69,22 @@ std::vector<TimingResult> measureAlgorithms(const DirectedGraph& graph,
   }
 
   return results;
+}
+
+void writeTimingCsvHeader(std::ostream& output) {
+  output << "graph_family,vertices,edges,seed,algorithm,run,nanoseconds,"
+            "components\n";
+}
+
+void writeTimingCsvRows(std::ostream& output,
+                        const std::string& graphFamily,
+                        std::size_t vertexCount, std::size_t edgeCount,
+                        std::uint64_t seed,
+                        const std::vector<TimingResult>& results) {
+  for (const TimingResult& result : results) {
+    output << graphFamily << ',' << vertexCount << ',' << edgeCount << ','
+           << seed << ',' << result.algorithm << ','
+           << result.repetition + 1 << ',' << result.nanoseconds << ','
+           << result.componentCount << '\n';
+  }
 }

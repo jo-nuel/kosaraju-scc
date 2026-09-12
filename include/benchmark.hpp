@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <iosfwd>
 #include <string>
 #include <vector>
 
@@ -21,5 +22,11 @@ inline constexpr std::size_t kTimedRuns = 7;
 std::vector<TimingResult> measureAlgorithms(
     const DirectedGraph& graph, std::size_t warmUpRuns = kWarmUpRuns,
     std::size_t timedRuns = kTimedRuns);
+
+void writeTimingCsvHeader(std::ostream& output);
+void writeTimingCsvRows(std::ostream& output, const std::string& graphFamily,
+                        std::size_t vertexCount, std::size_t edgeCount,
+                        std::uint64_t seed,
+                        const std::vector<TimingResult>& results);
 
 #endif  // BENCHMARK_HPP_
