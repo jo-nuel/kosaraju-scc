@@ -144,10 +144,34 @@ warm-up followed by seven measured runs on the same graph. The output records
 the graph family, vertex and edge counts, seed, algorithm, run number, elapsed
 nanoseconds, and component count.
 
+## Running the benchmark sweep
+
+Start with the quick sweep to check the executable and output format:
+
+```powershell
+python .\scripts\run_benchmarks.py --quick
+```
+
+The full candidate sweep is:
+
+```powershell
+python .\scripts\run_benchmarks.py
+```
+
+By default, the script expects a Visual Studio build in
+`build/Release/scc_benchmark.exe`. A different executable can be supplied with
+`--executable`. Quick results are written to `results/timings-quick.csv`, while
+the full sweep writes `results/timings.csv`.
+
+The largest cases are starting candidates. Watch their running time and memory
+use during the first full sweep. The script writes each completed case
+immediately, so it can be stopped if the next size is no longer practical.
+
 ## Current status
 
 The Kosaraju and Tarjan implementations are in place. The tests compare them
 on all possible four-vertex directed graphs and on a path containing 100,000
-vertices. The benchmark can measure one generated graph case and write its
-individual timing results as CSV. The next stage is to choose the full set of
-benchmark sizes and automate running them.
+vertices. The benchmark can measure one generated graph case or automate the
+candidate size sweep and save all individual timing results as CSV. The next
+stage is to run the size sweep, adjust impractical cases, and analyse the
+results.

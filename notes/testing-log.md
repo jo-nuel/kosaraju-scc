@@ -70,3 +70,10 @@ The project then compiled with C++23 and the enabled warning flags. The complete
 test program printed `All tests passed`. A benchmark smoke test on a random
 graph with 1,000 vertices and 3,000 edges produced seven rows for each
 algorithm, and both algorithms reported 105 components.
+
+## Benchmark sweep smoke test
+
+I ran the automation in quick mode against the native benchmark executable.
+It completed one path, cycle, sparse random, dense random, and clustered case.
+The output contained 70 data rows: 14 for each family and 35 for each
+algorithm. The full candidate sizes have not been run yet.
