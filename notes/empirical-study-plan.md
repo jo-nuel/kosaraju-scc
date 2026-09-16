@@ -61,7 +61,12 @@ The main measurements will be:
 - Number of edges
 - Graph family and random seed
 - Running time for each algorithm
-- Extra memory used while each algorithm runs
+- Total peak process working set while each algorithm runs
+
+Memory will be measured in fresh Windows processes, one algorithm per process.
+The same graph settings and seed rebuild equivalent inputs. Peak working set
+includes the graph, program, and shared pages, so it is an approximate total
+process comparison, not a count of the algorithm's own allocations.
 
 Release builds will be used for the final measurements. Debug checks are
 useful while developing, but they would make the timing less representative.

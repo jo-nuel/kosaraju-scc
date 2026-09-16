@@ -8,9 +8,16 @@
 #include <utility>
 #include <vector>
 
+#ifdef _WIN32
+#define PSAPI_VERSION 1
+#include <windows.h>
+#include <psapi.h>
+#endif
+
 #include "benchmark.hpp"
 #include "graph.hpp"
 #include "graph_generators.hpp"
+#include "scc.hpp"
 
 namespace {
 
@@ -26,7 +33,8 @@ void showUsage(std::ostream& output) {
          << "  scc_benchmark cycle <vertices>\n"
          << "  scc_benchmark random <vertices> <edges> <seed>\n"
          << "  scc_benchmark clustered <groups> <group-size> "
-            "<extra-edges-per-group> <seed>\n";
+            "<extra-edges-per-group> <seed>\n"
+         << "  scc_benchmark --memory <kosaraju|tarjan> <graph case above>\n";
 }
 
 std::uint64_t parseUnsigned(const char* text, const std::string& name) {
@@ -112,6 +120,40 @@ int main(int argumentCount, char* arguments[]) {
   }
 
   try {
+    if (argumentCount > 2 && std::string(arguments[1]) == "--memory") {
+#ifdef _WIN32
+      const std::string algorithm(arguments[2]);
+      if (algorithm != "kosaraju" && algorithm != "tarjan") {
+        throw std::invalid_argument("memory algorithm must be kosaraju or tarjan");
+      }
+      // Shift the argument list so readCase still sees the graph family at 1.
+      const BenchmarkCase benchmarkCase =
+          readCase(argumentCount - 2, arguments + 2);
+      const std::size_t edgeCount = countEdges(benchmarkCase.graph);
+      const SCCResult result =
+          algorithm == "kosaraju"
+              ? stronglyConnectedComponents(benchmarkCase.graph)
+              : tarjanStronglyConnectedComponents(benchmarkCase.graph);
+
+      PROCESS_MEMORY_COUNTERS counters{};
+      counters.cb = sizeof(counters);
+      if (!GetProcessMemoryInfo(GetCurrentProcess(), &counters,
+                                sizeof(counters))) {
+        throw std::runtime_error("Windows could not read process memory");
+      }
+      std::cout << "graph_family,vertices,edges,seed,algorithm,"
+                   "peak_working_set_bytes,components\n"
+                << benchmarkCase.family << ','
+                << benchmarkCase.graph.vertexCount() << ',' << edgeCount << ','
+                << benchmarkCase.seed << ',' << algorithm << ','
+                << counters.PeakWorkingSetSize << ','
+                << result.componentCount << '\n';
+      return 0;
+#else
+      throw std::runtime_error("memory mode requires Windows");
+#endif
+    }
+
     const BenchmarkCase benchmarkCase = readCase(argumentCount, arguments);
     const std::size_t edgeCount = countEdges(benchmarkCase.graph);
     const std::vector<TimingResult> results =

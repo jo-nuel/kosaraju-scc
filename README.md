@@ -166,6 +166,10 @@ the full sweep writes `results/timings.csv`.
 The largest cases are starting candidates. Watch their running time and memory
 use during the first full sweep. The script writes each completed case
 immediately, so it can be stopped if the next size is no longer practical.
+For an initial bounded sweep, use --max-vertices and --max-edges. Each
+algorithm's peak working set is measured in a fresh Windows process and saved
+to a separate memory CSV. This is total process memory, not extra allocations
+made by the algorithm alone.
 
 ## Current status
 

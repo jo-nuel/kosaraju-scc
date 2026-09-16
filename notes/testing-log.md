@@ -77,3 +77,17 @@ I ran the automation in quick mode against the native benchmark executable.
 It completed one path, cycle, sparse random, dense random, and clustered case.
 The output contained 70 data rows: 14 for each family and 35 for each
 algorithm. The full candidate sizes have not been run yet.
+
+## Bounded timing and memory sweep
+
+A first bounded sweep ran 26 of the 29 candidate cases with a release-mode
+GCC build. It produced 364 timing rows and 52 separate-process memory rows.
+The cases included paths and cycles through 1,000,000 vertices, all sparse
+random sizes through 256,000 vertices, dense random sizes through 3,200
+vertices, and all six clustered sizes. Timing and memory runs reported the
+same component count for each case.
+
+The 10,000,000-vertex path and cycle and the 6,400-vertex dense graph remain
+untested candidates. Peak working set is total process memory, including graph
+construction, rather than extra memory allocated by one algorithm. The results
+must be interpreted with that limitation.

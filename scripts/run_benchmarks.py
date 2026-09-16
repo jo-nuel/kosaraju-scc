@@ -19,6 +19,15 @@ CSV_FIELDS = [
     "nanoseconds",
     "components",
 ]
+MEMORY_FIELDS = [
+    "graph_family",
+    "vertices",
+    "edges",
+    "seed",
+    "algorithm",
+    "peak_working_set_bytes",
+    "components",
+]
 
 
 @dataclass(frozen=True)
@@ -102,12 +111,34 @@ def quick_cases() -> list[BenchmarkCase]:
     return [case for case in full_cases() if case.arguments in wanted]
 
 
-def run_case(executable: Path, case: BenchmarkCase) -> list[dict[str, str]]:
+def vertex_count_for(case: BenchmarkCase) -> int:
+    if case.family == "clustered":
+        return int(case.arguments[1]) * int(case.arguments[2])
+    return int(case.arguments[1])
+
+
+def edge_count_for(case: BenchmarkCase) -> int:
+    if case.family == "path":
+        return max(0, int(case.arguments[1]) - 1)
+    if case.family == "cycle":
+        return int(case.arguments[1])
+    if case.family == "clustered":
+        groups = int(case.arguments[1])
+        group_size = int(case.arguments[2])
+        extra = int(case.arguments[3])
+        return groups * (group_size + extra) + max(0, groups - 1)
+    return int(case.arguments[2])
+
+
+def run_case(
+    executable: Path, case: BenchmarkCase, timeout_seconds: int
+) -> list[dict[str, str]]:
     completed = subprocess.run(
         [str(executable), *case.arguments],
         check=True,
         capture_output=True,
         text=True,
+        timeout=timeout_seconds,
     )
     reader = csv.DictReader(io.StringIO(completed.stdout))
     if reader.fieldnames != CSV_FIELDS:
@@ -136,6 +167,29 @@ def run_case(executable: Path, case: BenchmarkCase) -> list[dict[str, str]]:
     return rows
 
 
+def run_memory_case(
+    executable: Path, case: BenchmarkCase, algorithm: str,
+    timeout_seconds: int,
+) -> dict[str, str]:
+    completed = subprocess.run(
+        [str(executable), "--memory", algorithm, *case.arguments],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=timeout_seconds,
+    )
+    reader = csv.DictReader(io.StringIO(completed.stdout))
+    if reader.fieldnames != MEMORY_FIELDS:
+        raise ValueError(f"unexpected memory columns for {case.description}")
+    rows = list(reader)
+    if len(rows) != 1 or rows[0]["algorithm"] != algorithm:
+        raise ValueError(f"unexpected memory row for {case.description}")
+    rows[0]["graph_family"] = case.family
+    if int(rows[0]["peak_working_set_bytes"]) <= 0:
+        raise ValueError(f"invalid memory peak for {case.description}")
+    return rows[0]
+
+
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run the Kosaraju and Tarjan benchmark cases."
@@ -150,6 +204,27 @@ def parse_arguments() -> argparse.Namespace:
         "--output",
         type=Path,
         help="CSV output path (default: results/timings.csv)",
+    )
+    parser.add_argument(
+        "--memory-output",
+        type=Path,
+        help="memory CSV path (default: results/memory.csv)",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=120,
+        help="maximum seconds for each individual benchmark process",
+    )
+    parser.add_argument(
+        "--max-vertices",
+        type=int,
+        help="skip cases above this vertex count during an initial sweep",
+    )
+    parser.add_argument(
+        "--max-edges",
+        type=int,
+        help="skip cases above this edge count during an initial sweep",
     )
     parser.add_argument(
         "--quick",
@@ -167,14 +242,37 @@ def main() -> int:
         return 1
 
     cases = quick_cases() if arguments.quick else full_cases()
+    if arguments.max_vertices is not None:
+        cases = [
+            case for case in cases
+            if vertex_count_for(case) <= arguments.max_vertices
+        ]
+    if arguments.max_edges is not None:
+        cases = [
+            case for case in cases
+            if edge_count_for(case) <= arguments.max_edges
+        ]
+    if arguments.timeout < 1:
+        print("--timeout must be positive", file=sys.stderr)
+        return 1
     default_name = "timings-quick.csv" if arguments.quick else "timings.csv"
     output_path = arguments.output or Path("results") / default_name
+    memory_name = "memory-quick.csv" if arguments.quick else "memory.csv"
+    memory_path = arguments.memory_output or Path("results") / memory_name
     output_path.parent.mkdir(parents=True, exist_ok=True)
+    memory_path.parent.mkdir(parents=True, exist_ok=True)
 
     try:
-        with output_path.open("w", newline="", encoding="utf-8") as output:
+        with (
+            output_path.open("w", newline="", encoding="utf-8") as output,
+            memory_path.open("w", newline="", encoding="utf-8") as memory_output,
+        ):
             writer = csv.DictWriter(output, fieldnames=CSV_FIELDS)
+            memory_writer = csv.DictWriter(
+                memory_output, fieldnames=MEMORY_FIELDS
+            )
             writer.writeheader()
+            memory_writer.writeheader()
 
             for position, case in enumerate(cases, start=1):
                 print(
@@ -182,17 +280,42 @@ def main() -> int:
                     file=sys.stderr,
                     flush=True,
                 )
-                writer.writerows(run_case(executable, case))
+                timing_rows = run_case(
+                    executable, case, arguments.timeout
+                )
+                memory_rows = [
+                    run_memory_case(
+                        executable, case, algorithm, arguments.timeout
+                    )
+                    for algorithm in ("kosaraju", "tarjan")
+                ]
+                expected_components = timing_rows[0]["components"]
+                if any(
+                    row["components"] != expected_components
+                    for row in memory_rows
+                ):
+                    raise ValueError(
+                        f"timing and memory results disagree for {case.description}"
+                    )
+                writer.writerows(timing_rows)
+                memory_writer.writerows(memory_rows)
                 output.flush()
+                memory_output.flush()
     except KeyboardInterrupt:
         print("\nStopped. Completed rows were kept in the output file.",
               file=sys.stderr)
         return 130
-    except (OSError, subprocess.CalledProcessError, ValueError) as error:
+    except (
+        OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired,
+        ValueError,
+    ) as error:
         print(f"Benchmark stopped: {error}", file=sys.stderr)
         return 1
 
-    print(f"Saved {len(cases)} cases to {output_path}", file=sys.stderr)
+    print(
+        f"Saved {len(cases)} cases to {output_path} and {memory_path}",
+        file=sys.stderr,
+    )
     return 0
 
 
