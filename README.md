@@ -171,11 +171,24 @@ algorithm's peak working set is measured in a fresh Windows process and saved
 to a separate memory CSV. This is total process memory, not extra allocations
 made by the algorithm alone.
 
+## Plotting the measured results
+
+The saved bounded sweep can be plotted without extra Python packages:
+
+```powershell
+python .\scripts\plot_results.py
+```
+
+This reads `results/timings-bounded.csv` and `results/memory-bounded.csv` and
+recreates `results/running-time.svg` and `results/peak-memory.svg`. Each graph
+family has its own panel. Time points show the median of seven runs; memory
+points show the peak working set of a separate process. The horizontal axis
+uses logarithmic spacing so both small and large cases remain visible.
+
 ## Current status
 
 The Kosaraju and Tarjan implementations are in place. The tests compare them
 on all possible four-vertex directed graphs and on a path containing 100,000
-vertices. The benchmark can measure one generated graph case or automate the
-candidate size sweep and save all individual timing results as CSV. The next
-stage is to run the size sweep, adjust impractical cases, and analyse the
-results.
+vertices. A bounded sweep measured 26 graph cases and saved the individual
+timings, process memory peaks, and plots in `results/`. The three largest
+candidate cases in `results/run-notes.md` have not been measured.

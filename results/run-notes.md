@@ -34,3 +34,9 @@ Peak working set is total process memory. It includes the stored graph,
 program code, and shared pages. It should not be described as the algorithm's
 exact extra allocation count. The dense case may be dominated by the memory
 needed to generate and store its graph.
+
+The figures can be recreated from these CSV files with
+`python scripts/plot_results.py`. `running-time.svg` shows the median of seven
+timings for each algorithm and case. `peak-memory.svg` shows the one recorded
+peak per algorithm and case. Panels use separate vertical scales and a
+logarithmically spaced vertex axis.
