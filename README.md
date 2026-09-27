@@ -3,6 +3,8 @@
 **Student:** Jonathan Immanuel  
 **Student ID:** 14487692
 
+Video link: 
+
 ## Project overview
 
 This project implements Kosaraju's algorithm for finding strongly connected
